@@ -1,0 +1,197 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+if _G.FlyV3 then return end
+_G.FlyV3 = true
+
+local flying = false
+local speed = 50
+local connection
+local bodyVelocity, bodyGyro
+local char = player.Character or player.CharacterAdded:Wait()
+local root = char:WaitForChild("HumanoidRootPart")
+local humanoid = char:WaitForChild("Humanoid")
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "FlyGUIv3"
+screenGui.Parent = playerGui
+screenGui.ResetOnSpawn = false
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 220, 0, 120)
+frame.Position = UDim2.new(0, 20, 0, 20)
+frame.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+frame.BorderSizePixel = 0
+frame.Active = true
+frame.Draggable = true
+frame.Parent = screenGui
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 12)
+corner.Parent = frame
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 35)
+title.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+title.Text = "🚀 Fly GUI V3 - 360° Smooth"
+title.TextColor3 = Color3.new(1, 1, 1)
+title.TextScaled = true
+title.Font = Enum.Font.GothamBold
+title.Parent = frame
+
+local titleCorner = Instance.new("UICorner")
+titleCorner.CornerRadius = UDim.new(0, 8)
+titleCorner.Parent = title
+
+local toggleBtn = Instance.new("TextButton")
+toggleBtn.Size = UDim2.new(0.95, 0, 0, 35)
+toggleBtn.Position = UDim2.new(0.025, 0, 0, 40)
+toggleBtn.BackgroundColor3 = Color3.fromRGB(0, 255, 100)
+toggleBtn.Text = "✈️ FLY OFF"
+toggleBtn.TextColor3 = Color3.new(0, 0, 0)
+toggleBtn.TextScaled = true
+toggleBtn.Font = Enum.Font.Gotham
+toggleBtn.Parent = frame
+
+local toggleCorner = Instance.new("UICorner")
+toggleCorner.CornerRadius = UDim.new(0, 8)
+toggleCorner.Parent = toggleBtn
+
+local speedLabel = Instance.new("TextLabel")
+speedLabel.Size = UDim2.new(0.45, 0, 0, 30)
+speedLabel.Position = UDim2.new(0.025, 0, 0, 80)
+speedLabel.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+speedLabel.Text = "Speed:"
+speedLabel.TextColor3 = Color3.new(1, 1, 1)
+speedLabel.TextScaled = true
+speedLabel.Font = Enum.Font.Gotham
+speedLabel.Parent = frame
+
+local speedLabelCorner = Instance.new("UICorner")
+speedLabelCorner.CornerRadius = UDim.new(0, 8)
+speedLabelCorner.Parent = speedLabel
+
+local speedBox = Instance.new("TextBox")
+speedBox.Size = UDim2.new(0.45, -10, 0, 30)
+speedBox.Position = UDim2.new(0.5, 5, 0, 80)
+speedBox.BackgroundColor3 = Color3.fromRGB(70, 70, 80)
+speedBox.Text = "50"
+speedBox.PlaceholderText = "50"
+speedBox.TextColor3 = Color3.new(1, 1, 1)
+speedBox.TextScaled = true
+speedBox.Font = Enum.Font.Gotham
+speedBox.Parent = frame
+
+local speedBoxCorner = Instance.new("UICorner")
+speedBoxCorner.CornerRadius = UDim.new(0, 8)
+speedBoxCorner.Parent = speedBox
+
+local closeBtn = Instance.new("TextButton")
+closeBtn.Size = UDim2.new(0.45, -10, 0, 30)
+closeBtn.Position = UDim2.new(0.025, 0, 0, 80)
+closeBtn.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+closeBtn.Text = "❌ Close"
+closeBtn.TextColor3 = Color3.new(1, 1, 1)
+closeBtn.TextScaled = true
+closeBtn.Font = Enum.Font.Gotham
+closeBtn.Parent = frame
+
+local closeCorner = Instance.new("UICorner")
+closeCorner.CornerRadius = UDim.new(0, 8)
+closeCorner.Parent = closeBtn
+
+-- Update Fly Function (360° camera sync)
+local function updateFly()
+    local cam = workspace.CurrentCamera
+    local moveVector = Vector3.new(0, 0, 0)
+
+    if UserInputService:IsKeyDown(Enum.KeyCode.W) then
+        moveVector = moveVector + cam.CFrame.LookVector
+    end
+    if UserInputService:IsKeyDown(Enum.KeyCode.S) then
+        moveVector = moveVector - cam.CFrame.LookVector
+    end
+    if UserInputService:IsKeyDown(Enum.KeyCode.D) then
+        moveVector = moveVector + cam.CFrame.RightVector
+    end
+    if UserInputService:IsKeyDown(Enum.KeyCode.A) then
+        moveVector = moveVector - cam.CFrame.RightVector
+    end
+    if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+        moveVector = moveVector + Vector3.new(0, 1, 0)
+    end
+    if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then
+        moveVector = moveVector - Vector3.new(0, 1, 0)
+    end
+
+    bodyVelocity.Velocity = moveVector.Unit * speed
+    bodyGyro.CFrame = cam.CFrame
+end
+
+-- Start Fly
+local function startFly()
+    humanoid.PlatformStand = true
+    bodyVelocity = Instance.new("BodyVelocity")
+    bodyVelocity.MaxForce = Vector3.new(40000, 40000, 40000)
+    bodyVelocity.Velocity = Vector3.new(0, 0.1, 0)
+    bodyVelocity.Parent = root
+
+    bodyGyro = Instance.new("BodyGyro")
+    bodyGyro.MaxTorque = Vector3.new(400000, 400000, 400000)
+    bodyGyro.P = 20000
+    bodyGyro.Parent = root
+
+    flying = true
+    connection = RunService.Heartbeat:Connect(updateFly)
+
+    toggleBtn.Text = "✈️ FLY ON"
+    toggleBtn.BackgroundColor3 = Color3.fromRGB(255, 100, 0)
+end
+
+local function stopFly()
+    flying = false
+    if connection then connection:Disconnect() end
+    if bodyVelocity then bodyVelocity:Destroy() end
+    if bodyGyro then bodyGyro:Destroy() end
+    humanoid.PlatformStand = false
+
+    toggleBtn.Text = "✈️ FLY OFF"
+    toggleBtn.BackgroundColor3 = Color3.fromRGB(0, 255, 100)
+end
+
+toggleBtn.MouseButton1Click:Connect(function()
+    speed = tonumber(speedBox.Text) or 50
+    if flying then
+        stopFly()
+    else
+        startFly()
+    end
+end)
+
+speedBox.FocusLost:Connect(function()
+    speed = tonumber(speedBox.Text) or 50
+end)
+
+closeBtn.MouseButton1Click:Connect(function()
+    stopFly()
+    screenGui:Destroy()
+end)
+
+player.CharacterAdded:Connect(function(newChar)
+    char = newChar
+    root = newChar:WaitForChild("HumanoidRootPart")
+    humanoid = newChar:WaitForChild("Humanoid")
+    if flying then
+        wait(1)
+        startFly()
+    end
+end)
+
+game.StarterGui:SetCore("SendNotification", {
+    Title = "🚀 Fly GUI V3 Loaded!";
+    Text = "Vira 360° suave! WASD + Mouse | Speed ajustável";
+    Duration = 5;
+})
